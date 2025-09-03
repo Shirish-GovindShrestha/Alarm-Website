@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Conversational Alarm Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2563eb;
+            --primary-blue-dark: #1d4ed8;
+            --secondary-green: #059669;
+            --secondary-green-dark: #047857;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #475569;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-green));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-blue-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            min-height: calc(100vh - 120px);
+        }
+
+        .chat-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(51, 65, 85, 0.5);
+        }
+
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .conversation-info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .user-avatar {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .bot-avatar {
+            background: var(--secondary-green);
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            max-width: calc(100% - 50px);
+        }
+
+        .message-text {
+            background: var(--bg-tertiary);
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .user-message .message-text {
+            background: var(--primary-blue);
+            color: white;
+            margin-left: auto;
+        }
+
+        .message-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sql-query {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.75rem;
+            color: var(--secondary-green);
+            overflow-x: auto;
+        }
+
+        .chat-input {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            background: rgba(51, 65, 85, 0.3);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .voice-btn {
+            background: var(--secondary-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .voice-btn:hover {
+            background: var(--secondary-green-dark);
+        }
+
+        .voice-btn.recording {
+            background: var(--error-color);
+            animation: pulse 1s infinite;
+        }
+
+        .voice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .voice-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 0.5rem 0;
+        }
+
+        .message-input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            resize: vertical;
+            min-height: 44px;
+            max-height: 120px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .send-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.875rem 1.25rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 80px;
+            justify-content: center;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--primary-blue-dark);
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .panel-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(51, 65, 85, 0.3);
+        }
+
+        .panel-content {
+            padding: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .entity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .entity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .entity-label {
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .entity-value {
+            color: var(--secondary-green);
+            font-weight: 500;
+        }
+
+        .alarm-item {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .alarm-item:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .alarm-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .alarm-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .alarm-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--success-color);
+            color: white;
+        }
+
+        .alarm-details {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            color: var(--text-muted);
+            font-style: italic;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .header-content {
+                padding: 0;
+            }
+
+            .app-title {
+                font-size: 1.25rem;
+            }
+
+            .chat-messages {
+                padding: 1rem;
+            }
+
+            .chat-input {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Voice input visual feedback */
+        .voice-recording {
+            border-color: var(--error-color) !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .voice-processing {
+            border-color: var(--warning-color) !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2) !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="app-title">
+                <i class="fas fa-robot"></i>
+                Conversational Alarm Assistant
+            </div>
+            <div class="header-controls">
+                <button class="btn btn-secondary" onclick="showHelp()">
+                    <i class="fas fa-question-circle"></i>
+                    Help
+                </button>
+                <button class="btn btn-secondary" onclick="resetConversation()">
+                    <i class="fas fa-refresh"></i>
+                    Reset
+                </button>
+                <button class="btn btn-primary" onclick="runDemo()">
+                    <i class="fas fa-play"></i>
+                    Demo
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="chat-section">
+            <div class="chat-header">
+                <div class="chat-status">
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span id="bot-status">Ready to help!</span>
+                    </div>
+                </div>
+                <div class="conversation-info">
+                    <span>State: <strong id="current-state">IDLE</strong></span>
+                    <span>Intent: <strong id="current-intent">None</strong></span>
+                    <span id="user-greeting"></span>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message">
+                    <div class="message-avatar bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            Hi there! I'm your personal alarm assistant. I can help you set, cancel, update, and manage all your alarms using natural conversation or voice commands.
+
+Try saying something like:
+• "Set workout alarm for 7 AM tomorrow"
+• "Show my alarms"
+• "Cancel the meeting reminder"
+• Or use the microphone button for voice input!
+
+What would you like to do?
+                        </div>
+                        <div class="message-meta">
+                            <i class="fas fa-clock"></i>
+                            <span id="initial-time"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typing-indicator">
+                <div class="message-avatar bot-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <span>Assistant is typing</span>
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <div class="voice-controls">
+                            <button class="voice-btn" id="voice-btn" onclick="toggleVoiceInput()">
+                                <i class="fas fa-microphone" id="voice-icon"></i>
+                                <span id="voice-text">Voice</span>
+                            </button>
+                            <div class="voice-status" id="voice-status"></div>
+                        </div>
+                        <textarea 
+                            class="message-input" 
+                            id="message-input" 
+                            placeholder="Type your message here or use voice input... (e.g., 'set alarm for 8 AM')"
+                            rows="1"
+                        ></textarea>
+                    </div>
+                    <button class="send-btn" id="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                        Send
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-chart-line"></i>
+                    Conversation Stats
+                </div>
+                <div class="panel-content">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="messages-count">0</span>
+                            <span class="stat-label">Messages</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="entities-count">0</span>
+                            <span class="stat-label">Entities</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="missing-fields-count">0</span>
+                            <span class="stat-label">Missing</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="retry-count">0</span>
+                            <span class="stat-label">Retries</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-tags"></i>
+                    Current Entities
+                </div>
+                <div class="panel-content">
+                    <div class="entity-list" id="entities-list">
+                        <div class="empty-state">No entities collected yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-alarm-clock"></i>
+                    Recent Alarms
+                </div>
+                <div class="panel-content">
+                    <div id="alarms-list">
+                        <div class="empty-state">No alarms created yet</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // Global state
+        let messageCount = 0;
+        let alarms = [];
+        let isLoading = false;
+        
+        // Voice input state
+        let recognition = null;
+        let isRecording = false;
+        let voiceSupported = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            document.getElementById('initial-time').textContent = now.toLocaleTimeString();
+            
+            // Auto-resize textarea
+            const textarea = document.getElementById('message-input');
+            textarea.addEventListener('input', autoResize);
+            
+            // Enter to send (Shift+Enter for new line)
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Initialize voice input
+            initializeVoiceInput();
+
+            // Start alarm polling
+            startAlarmPolling();
+        });
+
+        function initializeVoiceInput() {
+            // Check for speech recognition support
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = function() {
+                    isRecording = true;
+                    updateVoiceButton();
+                    updateVoiceStatus('Listening...');
+                    document.getElementById('message-input').classList.add('voice-recording');
+                };
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('message-input').value = transcript;
+                    updateVoiceStatus('Voice input captured');
+                    autoResize();
+                    
+                    // Auto-send voice messages after a short delay
+                    setTimeout(() => {
+                        if (transcript.trim()) {
+                            sendMessage();
+                        }
+                    }, 500);
+                };
+                
+                recognition.onerror = function(event) {
+                    updateVoiceStatus(`Voice error: ${event.error}`);
+                    isRecording = false;
+                    updateVoiceButton();
+                    document.getElementById('message-input').classList.remove('voice-recording', 'voice-processing');
+                };
+                
+                recognition.onend = function() {
+                    isRecording = false;
+                    updateVoiceButton();
+                    document.getElementById('message-input').classList.remove('voice-recording');
+                    if (document.getElementById('voice-status').textContent === 'Listening...') {
+                        updateVoiceStatus('');
+                    }
+                };
+                
+                voiceSupported = true;
+                updateVoiceStatus('Voice input ready');
+            } else {
+                document.getElementById('voice-btn').disabled = true;
+                updateVoiceStatus('Voice input not supported in this browser');
+            }
+        }
+
+        function toggleVoiceInput() {
+            if (!voiceSupported || !recognition) return;
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                try {
+                    recognition.start();
+                } catch (error) {
+                    updateVoiceStatus('Could not start voice input');
+                }
+            }
+        }
+
+        function updateVoiceButton() {
+            const btn = document.getElementById('voice-btn');
+            const icon = document.getElementById('voice-icon');
+            const text = document.getElementById('voice-text');
+            
+            if (isRecording) {
+                btn.classList.add('recording');
+                icon.className = 'fas fa-stop';
+                text.textContent = 'Stop';
+            } else {
+                btn.classList.remove('recording');
+                icon.className = 'fas fa-microphone';
+                text.textContent = 'Voice';
+            }
+        }
+
+        function updateVoiceStatus(message) {
+            const status = document.getElementById('voice-status');
+            status.textContent = message;
+            
+            if (message) {
+                setTimeout(() => {
+                    if (status.textContent === message) {
+                        status.textContent = '';
+                    }
+                }, 3000);
+            }
+        }
+
+        function autoResize() {
+            const textarea = document.getElementById('message-input');
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        async function sendMessage() {
+            if (isLoading) return;
+
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Show user message
+            addMessage('user', message);
+            input.value = '';
+            input.classList.remove('voice-recording', 'voice-processing');
+            autoResize();
+            
+            // Show typing indicator
+            showTyping();
+            isLoading = true;
+            updateSendButton(true);
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await response.json();
+                
+                // Hide typing indicator
+                hideTyping();
+                
+                // Show bot response
+                addMessage('bot', data.response);
+                
+                // Update UI state
+                updateConversationState(data);
+                updateStats(data.conversation_stats);
+                updateEntities(data.entities, data.missing_fields);
+                
+                // Handle alarm data
+                if (data.alarm_data) {
+                    addAlarm(data.alarm_data);
+                }
+
+            } catch (error) {
+                hideTyping();
+                addMessage('bot', `Sorry, I encountered an error: ${error.message}. Please try again!`);
+            } finally {
+                isLoading = false;
+                updateSendButton(false);
+            }
+        }
+
+        function addMessage(sender, text, sqlQuery = null) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = `message-avatar ${sender}-avatar`;
+            avatar.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            
+            const messageText = document.createElement('div');
+            messageText.className = 'message-text';
+            messageText.textContent = text;
+            
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            const timeStr = new Date().toLocaleTimeString();
+            meta.innerHTML = `<i class="fas fa-clock"></i><span>${timeStr}</span>`;
+            
+            // Add voice indicator for voice messages
+            if (sender === 'user' && document.getElementById('voice-status').textContent.includes('captured')) {
+                meta.innerHTML += ` <i class="fas fa-microphone" style="color: var(--secondary-green); margin-left: 0.5rem;" title="Voice input"></i>`;
+            }
+            
+            content.appendChild(messageText);
+            content.appendChild(meta);
+            
+            // Add SQL query if present
+            if (sqlQuery && sqlQuery.trim()) {
+                const sqlDiv = document.createElement('div');
+                sqlDiv.className = 'sql-query';
+                sqlDiv.innerHTML = `<i class="fas fa-database"></i> SQL: ${sqlQuery}`;
+                content.appendChild(sqlDiv);
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            messageCount++;
+        }
+
+        function showTyping() {
+            document.getElementById('typing-indicator').style.display = 'flex';
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            document.getElementById('typing-indicator').style.display = 'none';
+        }
+
+        function updateSendButton(loading) {
+            const btn = document.getElementById('send-btn');
+            if (loading) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+            }
+        }
+
+        function updateConversationState(data) {
+            document.getElementById('current-state').textContent = data.state || 'IDLE';
+            document.getElementById('current-intent').textContent = data.current_intent || 'None';
+            document.getElementById('bot-status').textContent = getStatusText(data.state);
+            
+            if (data.user_name) {
+                document.getElementById('user-greeting').textContent = `User: ${data.user_name}`;
+            }
+        }
+
+        // -------------------------
+        // Alarm polling and beep
+        // -------------------------
+        let alarmPollTimer = null;
+
+        function startAlarmPolling() {
+            if (alarmPollTimer) return;
+            // Poll every 1 second for timely ringing
+            alarmPollTimer = setInterval(checkAlarms, 1000);
+        }
+
+        async function checkAlarms() {
+            try {
+                const res = await fetch('/check-alarms');
+                const data = await res.json();
+                if (data && data.status === 'ringing') {
+                    const label = data.label || 'Alarm';
+                    addMessage('bot', `🔔 ${label}: Hey! Your alarm is ringing!`);
+                    playBeep();
+                }
+            } catch (e) {
+                // silent fail to avoid UI noise
+            }
+        }
+
+        function playBeep() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioCtx();
+
+                let elapsed = 0;
+                const durationMs = 5000; // 5 seconds total
+                const burstMs = 250;      // each beep on
+                const gapMs = 250;        // each beep off
+
+                let osc = null;
+                let gain = null;
+
+                function startBurst() {
+                    osc = ctx.createOscillator();
+                    gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.value = 880; // A5 tone
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+                    osc.start();
+                    setTimeout(stopBurst, burstMs);
+                }
+
+                function stopBurst() {
+                    if (!osc || !gain) return;
+                    try {
+                        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.02);
+                        setTimeout(() => {
+                            osc.stop();
+                            osc.disconnect();
+                            gain.disconnect();
+                            osc = null;
+                            gain = null;
+                        }, 60);
+                    } catch {}
+                }
+
+                function loop() {
+                    if (elapsed >= durationMs) {
+                        try { ctx.close(); } catch {}
+                        return;
+                    }
+                    startBurst();
+                    elapsed += burstMs + gapMs;
+                    setTimeout(loop, burstMs + gapMs);
+                }
+
+                loop();
+            } catch (e) {
+                // ignore if audio context blocked
+            }
+        }
+
+        function getStatusText(state) {
+            const statusTexts = {
+                'IDLE': 'Ready to help!',
+                'COLLECTING_ENTITIES': 'Collecting information...',
+                'CONFIRMING': 'Waiting for confirmation...',
+                'error': 'Something went wrong'
+            };
+            return statusTexts[state] || 'Processing...';
+        }
+
+        function updateStats(stats) {
+            if (!stats) return;
+            
+            document.getElementById('messages-count').textContent = messageCount;
+            document.getElementById('entities-count').textContent = stats.entities_collected || 0;
+            document.getElementById('missing-fields-count').textContent = stats.missing_fields || 0;
+            document.getElementById('retry-count').textContent = stats.retry_count || 0;
+        }
+
+        function updateEntities(entities, missingFields = []) {
+            const entitiesList = document.getElementById('entities-list');
+            
+            if (!entities || Object.keys(entities).length === 0) {
+                entitiesList.innerHTML = '<div class="empty-state">No entities collected yet</div>';
+                return;
+            }
+            
+            entitiesList.innerHTML = '';
+            
+            Object.entries(entities).forEach(([key, value]) => {
+                const entityDiv = document.createElement('div');
+                entityDiv.className = 'entity-item';
+                entityDiv.innerHTML = `
+                    <span class="entity-label">${key}</span>
+                    <span class="entity-value">${value}</span>
+                `;
+                entitiesList.appendChild(entityDiv);
+            });
+            
+            // Show missing fields
+            missingFields.forEach(field => {
+                const entityDiv = document.createElement('div');
+                entityDiv.className = 'entity-item';
+                entityDiv.style.opacity = '0.6';
+                entityDiv.innerHTML = `
+                    <span class="entity-label">${field}</span>
+                    <span class="entity-value" style="color: var(--warning-color);">Missing</span>
+                `;
+                entitiesList.appendChild(entityDiv);
+            });
+        }
+
+        function addAlarm(alarmData) {
+            alarms.unshift(alarmData); // Add to beginning
+            updateAlarmsDisplay();
+        }
+
+        function updateAlarmsDisplay() {
+            const alarmsList = document.getElementById('alarms-list');
+            
+            if (alarms.length === 0) {
+                alarmsList.innerHTML = '<div class="empty-state">No alarms created yet</div>';
+                return;
+            }
+            
+            alarmsList.innerHTML = '';
+            
+            alarms.slice(0, 5).forEach(alarm => { // Show last 5 alarms
+                const alarmDiv = document.createElement('div');
+                alarmDiv.className = 'alarm-item';
+                const label = alarm.label && alarm.label !== 'Unnamed Alarm' ? alarm.label : 'Alarm';
+                const status = alarm.status || 'active';
+                const time = alarm.time || 'Not specified';
+                const date = alarm.date || new Date().toISOString().slice(0,10);
+                const repeat = alarm.repeat || 'None';
+                alarmDiv.innerHTML = `
+                    <div class="alarm-header">
+                        <div class="alarm-label">${label}</div>
+                        <div class="alarm-status">${status}</div>
+                    </div>
+                    <div class="alarm-details">
+                        <div><i class="fas fa-clock"></i> ${time}</div>
+                        <div><i class="fas fa-calendar"></i> ${formatDate(date)}</div>
+                        ${repeat !== 'None' ? `<div><i class="fas fa-repeat"></i> ${repeat}</div>` : ''}
+                        <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.5rem;">
+                            Created: ${alarm.created_at}
+                        </div>
+                    </div>
+                `;
+                alarmsList.appendChild(alarmDiv);
+            });
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            if (date.toDateString() === today.toDateString()) {
+                return 'Today';
+            } else if (date.toDateString() === tomorrow.toDateString()) {
+                return 'Tomorrow';
+            } else {
+                return date.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+        }
+
+        async function resetConversation() {
+            if (isLoading) return;
+            
+            try {
+                const response = await fetch('/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                // Clear messages except welcome
+                const messagesContainer = document.getElementById('chat-messages');
+                messagesContainer.innerHTML = `
+                    <div class="message">
+                        <div class="message-avatar bot-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-text">${data.response}</div>
+                            <div class="message-meta">
+                                <i class="fas fa-clock"></i>
+                                <span>${new Date().toLocaleTimeString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Reset UI state
+                messageCount = 1;
+                document.getElementById('current-state').textContent = 'IDLE';
+                document.getElementById('current-intent').textContent = 'None';
+                document.getElementById('user-greeting').textContent = '';
+                document.getElementById('bot-status').textContent = 'Ready to help!';
+                
+                // Clear entities and stats
+                updateEntities({});
+                updateStats({});
+                
+            } catch (error) {
+                addMessage('bot', `Error resetting conversation: ${error.message}`);
+            }
+        }
+
+        async function showHelp() {
+            try {
+                const response = await fetch('/help');
+                const data = await response.json();
+                addMessage('bot', data.response);
+            } catch (error) {
+                addMessage('bot', `Error getting help: ${error.message}`);
+            }
+        }
+
+        async function runDemo() {
+            if (isLoading) return;
+            
+            try {
+                const response = await fetch('/demo');
+                const data = await response.json();
+                
+                addMessage('bot', '🎭 Starting demo conversation...');
+                
+                // Simulate demo conversation with delays
+                for (let i = 0; i < data.demo_conversation.length; i++) {
+                    const turn = data.demo_conversation[i];
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    addMessage('user', turn.user);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    addMessage('bot', turn.bot);
+                    
+                    // Update UI with demo state
+                    updateConversationState({
+                        state: turn.state,
+                        current_intent: turn.current_intent || 'None'
+                    });
+                    updateEntities(turn.entities);
+                }
+                
+                addMessage('bot', '✨ Demo completed! The conversation has been reset. You can now try it yourself!');
+                
+            } catch (error) {
+                addMessage('bot', `Error running demo: ${error.message}`);
+            }
+        }
+
+        // Auto-scroll chat to bottom when new messages arrive
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    const messagesContainer = document.getElementById('chat-messages');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            });
+        });
+
+        observer.observe(document.getElementById('chat-messages'), {
+            childList: true,
+            subtree: true
+        });
+    </script>
+</body>
+</html>
